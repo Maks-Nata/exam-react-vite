@@ -1,37 +1,34 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState, AppDispatch } from "../store/store.ts";
-import { setRecipes } from "../store/slices/recipeSlice.ts";
+import { fetchRecipes, nextPage, prevPage, selectRecipe } from "../store/slices/recipeSlice";
+import { RootState, AppDispatch } from "../store/store";
 
 const RecipesPage = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const recipes = useSelector((state: RootState) => state.recipes.recipes);
+    const { recipes, skip, total } = useSelector((state: RootState) => state.recipes);
 
     useEffect(() => {
-        fetch("https://dummyjson.com/recipes")
-            .then((res) => res.json())
-            .then((data) => dispatch(setRecipes(data.recipes)))
-            .catch((err) => console.error("Ошибка загрузки рецептов", err));
-    }, [dispatch]);
+        dispatch(fetchRecipes(skip));
+    }, [dispatch, skip]);
 
     return (
         <div>
-            <h1>Список рецептов</h1>
-            <ul>
-                {recipes.map((recipe) => (
-                    <li key={recipe.id}>
-                        <img src={recipe.image} alt={recipe.name} width={100} />
-                        <h3>{recipe.name}</h3>
-                        <p>ID: {recipe.id}</p>
-                        <p>Пользователь: {recipe.userId}</p>
-                        <p>Ингредиенты: {recipe.ingredients.join(", ")}</p>
-                        <p>Теги: {recipe.tags.join(", ")}</p>
-                        <p>Время приготовления: {recipe.prepTimeMinutes} мин.</p>
-                        <p>Время готовки: {recipe.cookTimeMinutes} мин.</p>
-                        <p>Инструкции: {recipe.instructions.join(" ")}</p>
-                    </li>
-                ))}
-            </ul>
+            <h1>Список рецептів</h1>
+            {recipes.map((recipe) => (
+                <div key={recipe.id}>
+                    <h3>{recipe.name}</h3>
+                    <img src={recipe.image} alt={recipe.name} width="100" />
+                    <button onClick={() => dispatch(selectRecipe(recipe))}>Детальніше</button>
+                    <div>
+                        {recipe.tags.map((tag) => (
+                            <button key={tag} onClick={() => dispatch(fetchRecipes(skip))}>{tag}</button>
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            <button onClick={() => dispatch(prevPage())} disabled={skip === 0}>Prev</button>
+            <button onClick={() => dispatch(nextPage())} disabled={skip + 30 >= total}>Next</button>
         </div>
     );
 };
